@@ -22,3 +22,7 @@ This project is licensed under the [MIT License](LICENSE).
 ## OpenGL
 
 This project wouldn't be possible without help from the [Learn OpenGL Online Book](https://learnopengl.com)
+
+## Inspiration
+
+This project is inspired by a similar project by [jdh on YouTube](https://www.youtube.com/@jdh). Check out his project [here](https://www.youtube.com/watch?v=4O0_-1NaWnY).
