@@ -18,13 +18,13 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
 // settings
-const unsigned int SCR_WIDTH = 1920; // Screen width
-const unsigned int SCR_HEIGHT = 1080; // Screen height
+float SCR_WIDTH = 1920; // Screen width
+float SCR_HEIGHT = 1080; // Screen height
 bool wireframe = false;
 bool mouse_locked = true;
 
 // camera
-Camera camera = Camera(glm::vec3(0.0f, 3.0f, 0.0f));
+Camera camera = Camera(glm::vec3(0.0f, 0.0f, -3.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -87,67 +87,52 @@ int main() {
     //===================================================================================
 
     float vertices[] = {
-        // Position          // UV Coords
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+        // Position     // Texture Coords
+        // x,  y,  z,   u, v
+           0, 0, 0,     0, 0, // north face (-z)
+           1, 0, 0,     1, 0,
+           1, 1, 0,     1, 1,
+           0, 1, 0,     0, 1,
 
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+           0, 0, 1,     1, 0, // south face (+z)
+           1, 0, 1,     0, 0,
+           1, 1, 1,     0, 1,
+           0, 1, 1,     1, 1,
 
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+           0, 0, 0,     1, 0, // west face (-x)
+           0, 0, 1,     0, 0,
+           0, 1, 1,     0, 1,
+           0, 1, 0,     1, 1,
 
-        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+           1, 0, 0,     0, 0, // east face (+x)
+           1, 0, 1,     1, 0,
+           1, 1, 1,     1, 1,
+           1, 1, 0,     0, 1,
 
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+           0, 0, 0,     0, 0, // bottom face (-y)
+           0, 0, 1,     1, 0,
+           1, 0, 1,     1, 1,
+           1, 0, 0,     0, 1,
 
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+           0, 1, 0,     0, 0, // top face (+y)
+           0, 1, 1,     1, 0,
+           1, 1, 1,     1, 1,
+           1, 1, 0,     0, 1
     };
-    glm::vec3 cubePositions[] = {
-        glm::vec3( 0.0f,  0.0f,  0.0f), 
-        glm::vec3( 2.0f,  5.0f, -15.0f), 
-        glm::vec3(-1.5f, -2.2f, -2.5f),  
-        glm::vec3(-3.8f, -2.0f, -12.3f),  
-        glm::vec3( 2.4f, -0.4f, -3.5f),  
-        glm::vec3(-1.7f,  3.0f, -7.5f),  
-        glm::vec3( 1.3f, -2.0f, -2.5f),  
-        glm::vec3( 1.5f,  2.0f, -2.5f), 
-        glm::vec3( 1.5f,  0.2f, -1.5f), 
-        glm::vec3(-1.3f,  1.0f, -1.5f)  
+    unsigned int indices[] = {
+         0,  1,  2,  2,  3,  0, // north face (-z)
+         4,  5,  6,  6,  7,  4, // south face (+z)
+         8,  9, 10, 10, 11,  8, // west face (-x)
+        12, 13, 14, 14, 15, 12, // east face (+x)
+        16, 17, 18, 18, 19, 16, // bottom face (-y)
+        20, 21, 22, 22, 23, 20  // top face (+y)
     };
 
     // Get the vertex buffer object, vertex array object, and element buffer object IDs
     unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    //glGenBuffers(1, &EBO);
+    glGenBuffers(1, &EBO);
 
     // Bind the vertex array object
     glBindVertexArray(VAO);
@@ -157,8 +142,8 @@ int main() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     // Bind the element buffer object
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // Tell OpenGL how to interpret the vertex data
     // Position attribute
@@ -248,7 +233,7 @@ int main() {
 
         // Get the projection matrix
         glm::mat4 projection = glm::mat4(1.0f);
-        projection = glm::perspective(glm::radians(camera.Zoom), 800.0f / 600.0f, 0.1f, 100.0f); 
+        projection = glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / float(SCR_HEIGHT), 0.1f, 100.0f); 
 
         // Pass the matrices to the shader
         shaderProgram.setMat4("projection", projection);
@@ -257,15 +242,16 @@ int main() {
         // Draw the rectangle
         glBindVertexArray(VAO); 
 
-        const int PLAT_SIZE = 100;
+        const int PLAT_SIZE = 16;
         for (unsigned int x = 0; x < PLAT_SIZE; x++)
+        for (unsigned int y = 0; y < PLAT_SIZE; y++)
         for (unsigned int z = 0; z < PLAT_SIZE; z++){
             // calculate the model matrix for each object and pass it to shader before drawing
             glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, glm::vec3((float)x - PLAT_SIZE/2, 0.0f, (float)z - PLAT_SIZE/2));
+            model = glm::translate(model, glm::vec3((float)x, (float)y, (float)z));
             shaderProgram.setMat4("model", model);
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         }
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -367,5 +353,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 // Callback function for when the window is resized: adjust the viewport size
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
+    SCR_WIDTH = width; SCR_HEIGHT = height;
     glViewport(0, 0, width, height);
 }  
