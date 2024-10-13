@@ -189,7 +189,7 @@ int main() {
     // load and generate the texture
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true);
-    unsigned char *data = stbi_load("assets/dirt.jpg", &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load("assets/dirt.png", &width, &height, &nrChannels, 0);
 
     // Check that the image was loaded
     if (data)
@@ -204,19 +204,35 @@ int main() {
 
     shaderProgram.use();
 
+    // Variables to keep track of the number of frames rendered and the total time elapsed
+    int frameCount = 0;
+    double totalTime = 0.0;
+
     // Render loop
     while(!glfwWindowShouldClose(window))
     {   
         // Calculate the delta time between frames
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;  
+        lastFrame = currentFrame;
+
+        // Increment the frame count and total time
+        frameCount++;
+        totalTime += deltaTime;
+
+        // If one second has passed, print the FPS and reset the frame count and total time
+        if (totalTime >= 1.0)
+        {
+            std::cout << "FPS: " << frameCount << std::endl;
+            frameCount = 0;
+            totalTime -= 1.0;
+        }
 
         // Process input
         processInput(window);
 
         // Render commands will go here
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.3569f, 0.6471f, 0.7725f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // bind
