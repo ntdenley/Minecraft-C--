@@ -58,7 +58,8 @@ int main() {
     // Tell GLFW to make the context of the window the main context on the current thread
     glfwMakeContextCurrent(window);
     glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback); 
+    glfwSetScrollCallback(window, scroll_callback);
+    glfwSwapInterval(0); // Disable VSync
 
     // tell GLFW to capture our mouse
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
