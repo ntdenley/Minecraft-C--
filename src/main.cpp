@@ -1,16 +1,19 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include <iostream>
+#include <vector> // <-- remove after implementing world generation
 
+#include <glad/glad.h> // OpenGL functions
+#include <GLFW/glfw3.h>// Window functions
+
+// Matrix/Vector math library
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// Custom headers
+#include <world/chunk.h>
+#include <util/camera.h>
 #include <vfx/shader.h>
 #include <vfx/stb_image.h>
-
-#include <util/camera.h>
-
-#include <iostream>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -24,10 +27,7 @@ bool wireframe = false;
 bool mouse_locked = true;
 
 // camera
-Camera camera = Camera(glm::vec3(0.0f, 0.0f, -3.0f));
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
-bool firstMouse = true;
+Camera camera = Camera(glm::vec3(0.0f, 5.0f, 0.0f));
 
 // timing
 float deltaTime = 0.0f;	// Time between current frame and last frame
@@ -81,84 +81,18 @@ int main() {
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
     // Set the callback function for when the window is resized
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    // Vertex data
-    //===================================================================================
+    std::vector<Chunk> chunks;
 
-    float vertices[] = {
-        // Position     // Texture Coords
-        // x,  y,  z,   u, v
-           0, 0, 0,     0, 0, // north face (-z)
-           1, 0, 0,     1, 0,
-           1, 1, 0,     1, 1,
-           0, 1, 0,     0, 1,
+    for(int x = 0; x < 4; x++)
+    for(int z = 0; z < 4; z++)
+    {
+        chunks.push_back(Chunk(glm::vec3(x-2, -1, z-2), shaderProgram));
+        chunks[chunks.size() - 1].Generate();
+    }
 
-           0, 0, 1,     1, 0, // south face (+z)
-           1, 0, 1,     0, 0,
-           1, 1, 1,     0, 1,
-           0, 1, 1,     1, 1,
-
-           0, 0, 0,     1, 0, // west face (-x)
-           0, 0, 1,     0, 0,
-           0, 1, 1,     0, 1,
-           0, 1, 0,     1, 1,
-
-           1, 0, 0,     0, 0, // east face (+x)
-           1, 0, 1,     1, 0,
-           1, 1, 1,     1, 1,
-           1, 1, 0,     0, 1,
-
-           0, 0, 0,     0, 0, // bottom face (-y)
-           0, 0, 1,     1, 0,
-           1, 0, 1,     1, 1,
-           1, 0, 0,     0, 1,
-
-           0, 1, 0,     0, 0, // top face (+y)
-           0, 1, 1,     1, 0,
-           1, 1, 1,     1, 1,
-           1, 1, 0,     0, 1
-    };
-    unsigned int indices[] = {
-         0,  1,  2,  2,  3,  0, // north face (-z)
-         4,  5,  6,  6,  7,  4, // south face (+z)
-         8,  9, 10, 10, 11,  8, // west face (-x)
-        12, 13, 14, 14, 15, 12, // east face (+x)
-        16, 17, 18, 18, 19, 16, // bottom face (-y)
-        20, 21, 22, 22, 23, 20  // top face (+y)
-    };
-
-    // Get the vertex buffer object, vertex array object, and element buffer object IDs
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-
-    // Bind the vertex array object
-    glBindVertexArray(VAO);
-
-    // Bind the vertex buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // Bind the element buffer object
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // Tell OpenGL how to interpret the vertex data
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // // Color attribute
-    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    // glEnableVertexAttribArray(1);
-
-    // Texture Coord attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);   
-
-    // Textures
+    // // Textures
     //===================================================================================
     // texture 1
     unsigned int texture1;
@@ -185,7 +119,7 @@ int main() {
         std::cout << "Width: " << width << " Height: " << height << std::endl;
     }
     else
-        std::cout << "Failed to load texture" << std::endl;
+    std::cout << "Failed to load texture" << std::endl;
     stbi_image_free(data);
 
     shaderProgram.use();
@@ -193,6 +127,10 @@ int main() {
     // Variables to keep track of the number of frames rendered and the total time elapsed
     int frameCount = 0;
     double totalTime = 0.0;
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CW);
 
     // Render loop
     while(!glfwWindowShouldClose(window))
@@ -233,38 +171,29 @@ int main() {
 
         // Get the projection matrix
         glm::mat4 projection = glm::mat4(1.0f);
-        projection = glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / float(SCR_HEIGHT), 0.1f, 100.0f); 
+        projection = glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / float(SCR_HEIGHT), 0.1f, 1000.0f); 
 
         // Pass the matrices to the shader
         shaderProgram.setMat4("projection", projection);
         shaderProgram.setMat4("view", view);
 
         // Draw the rectangle
-        glBindVertexArray(VAO); 
+        // glBindVertexArray(VAO); 
 
-        const int PLAT_SIZE = 16;
-        for (unsigned int x = 0; x < PLAT_SIZE; x++)
-        for (unsigned int y = 0; y < PLAT_SIZE; y++)
-        for (unsigned int z = 0; z < PLAT_SIZE; z++){
-            // calculate the model matrix for each object and pass it to shader before drawing
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, glm::vec3((float)x, (float)y, (float)z));
-            shaderProgram.setMat4("model", model);
+        // calculate the model matrix for each object and pass it to shader before drawing
 
-            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        for(Chunk chunk : chunks){
+            chunk.Render();
         }
+        
+        // glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
+        
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwPollEvents();  
         glfwSwapBuffers(window);
     }
-
-    // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
 
     // Terminate GLFW
     glfwTerminate();
@@ -274,6 +203,11 @@ int main() {
 bool mKeyReleased = true;
 bool escKeyReleased = true;
 
+
+float lastX = SCR_WIDTH / 2.0f;
+float lastY = SCR_HEIGHT / 2.0f;
+bool firstMouse = true;
+
 // Process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 void processInput(GLFWwindow *window)
 {
@@ -282,14 +216,16 @@ void processInput(GLFWwindow *window)
         mouse_locked = !mouse_locked;
         if(mouse_locked)
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        else
+        else{
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            lastX = SCR_WIDTH / 2.0f;
+            lastY = SCR_HEIGHT / 2.0f;
+            firstMouse = true;
+        }
         escKeyReleased = false;
     }
     else if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_RELEASE)
-    {
         escKeyReleased = true;
-    }
 
     if(glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS && mKeyReleased)
     {

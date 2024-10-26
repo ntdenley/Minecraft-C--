@@ -2,6 +2,7 @@
 #define SHADER_H
 
 #include <glad/glad.h> // Include the OpenGL function declarations
+#include <glm/gtc/type_ptr.hpp>
 
 #include <string>
 #include <fstream>
