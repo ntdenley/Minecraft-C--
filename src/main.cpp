@@ -1,5 +1,5 @@
 #include <iostream>
-#include <vector> // <-- remove after implementing world generation
+#include <thread>
 
 #include <glad/glad.h> // OpenGL functions
 #include <GLFW/glfw3.h>// Window functions
@@ -11,6 +11,7 @@
 
 // Custom headers
 #include <world/chunk.h>
+#include <world/world.h>
 #include <util/camera.h>
 #include <vfx/shader.h>
 #include <vfx/stb_image.h>
@@ -47,7 +48,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
     // Create the window, 
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Minecraft C++", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -57,8 +58,6 @@ int main() {
 
     // Tell GLFW to make the context of the window the main context on the current thread
     glfwMakeContextCurrent(window);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
     glfwSwapInterval(0); // Disable VSync
 
     // tell GLFW to capture our mouse
@@ -71,26 +70,23 @@ int main() {
         return -1;
     }
 
-    // Configure global OpenGL state
-    glEnable(GL_DEPTH_TEST);
-
-    // create the shader program
-    Shader shaderProgram("vfx/shaders/3.3.vertex.glsl", "vfx/shaders/3.3.fragment.glsl");
+    // Set the callback functions
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
     // Set the viewport size
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
-    // Set the callback function for when the window is resized
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    // Configure global OpenGL state
+    glClearColor(0.3569f, 0.6471f, 0.7725f, 1.0f);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CW);
 
-    std::vector<Chunk> chunks;
-
-    for(int x = 0; x < 4; x++)
-    for(int z = 0; z < 4; z++)
-    {
-        chunks.push_back(Chunk(glm::vec3(x-2, -1, z-2), shaderProgram));
-        chunks[chunks.size() - 1].Generate();
-    }
+    // create the shader program
+    Shader shaderProgram("vfx/shaders/3.3.vertex.glsl", "vfx/shaders/3.3.fragment.glsl");
 
     // // Textures
     //===================================================================================
@@ -116,7 +112,6 @@ int main() {
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
-        std::cout << "Width: " << width << " Height: " << height << std::endl;
     }
     else
     std::cout << "Failed to load texture" << std::endl;
@@ -128,9 +123,8 @@ int main() {
     int frameCount = 0;
     double totalTime = 0.0;
 
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CW);
+    // Set the global world pointer
+    World::world = new World(&shaderProgram);
 
     // Render loop
     while(!glfwWindowShouldClose(window))
@@ -156,10 +150,9 @@ int main() {
         processInput(window);
 
         // Render commands will go here
-        glClearColor(0.3569f, 0.6471f, 0.7725f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // bind
+        // Bind the texture
         glBindTexture(GL_TEXTURE_2D, texture1);
 
         // Use the shader program
@@ -177,18 +170,9 @@ int main() {
         shaderProgram.setMat4("projection", projection);
         shaderProgram.setMat4("view", view);
 
-        // Draw the rectangle
-        // glBindVertexArray(VAO); 
+        // Load and render the chunks
+        World::world->Update(camera.Position);
 
-        // calculate the model matrix for each object and pass it to shader before drawing
-
-        for(Chunk chunk : chunks){
-            chunk.Render();
-        }
-        
-        // glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-
-        
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwPollEvents();  
@@ -253,7 +237,7 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
         camera.ProcessKeyboard(DOWN, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-        camera.MovementSpeed = camera.DefaultSpeed * 2.5f;
+        camera.MovementSpeed = camera.DefaultSpeed * 10.0f;
     else
         camera.MovementSpeed = camera.DefaultSpeed;
 }

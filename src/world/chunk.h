@@ -26,7 +26,7 @@ class Chunk {
             TOP
         };
 
-        Chunk(glm::vec3 offset, Shader shader);
+        Chunk(glm::vec3 offset, Shader *shader);
         ~Chunk();
 
         void Generate();
@@ -44,7 +44,7 @@ class Chunk {
     private:
         unsigned int VBO, VAO, EBO;
         glm::vec3 worldPos;
-        Shader shader;
+        Shader *shader;
 
         std::vector<float> vertices;
         std::vector<unsigned int> indices;

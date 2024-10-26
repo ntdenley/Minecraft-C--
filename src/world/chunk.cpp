@@ -1,7 +1,8 @@
 #include <world/chunk.h>
+#include <FastNoiseLite/FastNoiseLite.h>
 
 // Macro for converting 3D coordinates to a 1D index
-#define pos_to_index(x, y, z) (x + y * CHUNK_SIZE + z * CHUNK_SIZE * CHUNK_SIZE)
+#define pos_to_index(x, y, z) static_cast<int>(x + y * CHUNK_SIZE + z * CHUNK_SIZE * CHUNK_SIZE)
 
 // Cube vertices
 float CUBE_VERTS[] = {
@@ -41,15 +42,24 @@ float CUBE_VERTS[] = {
 // Cube indices
 unsigned int CUBE_INDICES[] = { 0,  1,  2,  2,  3,  0 };
 
-Chunk::Chunk(glm::vec3 offset, Shader shaderProg) : offset(offset), shader(shaderProg) {
+Chunk::Chunk(glm::vec3 offset, Shader *shaderProg) : offset(offset), shader(shaderProg) {
     // Initialize the chunk
     worldPos = offset * static_cast<float>(CHUNK_SIZE);
 
+    FastNoiseLite noise;
+    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+
     // Generate the block data
-    for(int x = 0; x < CHUNK_SIZE; x++)
-    for(int y = 0; y < CHUNK_SIZE; y++)
-    for(int z = 0; z < CHUNK_SIZE; z++)
-        blockData[pos_to_index(x, y, z)] = BlockType::DIRT;
+    for(float x = 0; x < CHUNK_SIZE; x++)
+    for(float y = 0; y < CHUNK_SIZE; y++)
+    for(float z = 0; z < CHUNK_SIZE; z++){
+        float y_noise = noise.GetNoise(x + worldPos.x, z + worldPos.z) * 10.0f;
+        y_noise += pow(2, noise.GetNoise(x + worldPos.x, z + worldPos.z) * 5.0f);
+        if(y+worldPos.y < y_noise)
+            blockData[pos_to_index(x, y, z)] = BlockType::DIRT;
+        else
+            blockData[pos_to_index(x, y, z)] = BlockType::AIR;
+    }
 
     // Generate the VAO, VBO, and EBO
     glGenVertexArrays(1, &VAO);
@@ -61,10 +71,7 @@ Chunk::Chunk(glm::vec3 offset, Shader shaderProg) : offset(offset), shader(shade
 }
 
 Chunk::~Chunk() {
-    // Delete the VAO, VBO, and EBO
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+
 }
 
 Chunk::BlockType Chunk::GetBlockData(int x, int y, int z){
@@ -84,7 +91,7 @@ void Chunk::Generate() {
     for(int z = 0; z < CHUNK_SIZE; z++) {
         // Get the position of the block (relative to the chunk)
         glm::vec3 pos = glm::vec3(x, y, z);
-        
+
         // Check if the block is solid, and if so, add the faces
         if(GetBlockData(x, y, z) != BlockType::AIR){
             // For each face, check adjacent blocks to see if face should be added
@@ -116,12 +123,16 @@ void Chunk::Generate() {
 
     // Tell OpenGL how to interpret the vertex data
     // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     // Texture Coord attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    // Pseudo-lighting attribute
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 }
 
 void Chunk::Render() {
@@ -131,13 +142,31 @@ void Chunk::Render() {
     // Shift the chunk to the correct position
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, worldPos);
-    shader.setMat4("model", model);
+    shader->setMat4("model", model);
 
     // Draw the chunk
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 }
 
 void Chunk::AddFace(glm::ivec3 pos, Direction direction) {
+
+    float color = 1.0f;
+    // Lighting
+    switch(direction){
+        case TOP:
+            color = 1.0f;
+            break;
+        case NORTH:
+        case SOUTH:
+            color = 0.86f;
+            break;
+        case EAST:
+        case WEST:
+            color = 0.8f;
+            break;
+        case BOTTOM:
+            color = 0.6f;
+    }
 
     // Vertices
     int vert_offset = direction * 20;
@@ -152,13 +181,14 @@ void Chunk::AddFace(glm::ivec3 pos, Direction direction) {
         // Texture Coords
         vertices.push_back(*ptr++);
         vertices.push_back(*ptr);
+        vertices.push_back(color);
     }
 
     // Indices
     for(int i = 0; i < 6; i++) {
         indices.push_back(CUBE_INDICES[i] + vertexCount);
     }
-
+    
     // 4 new vertices and 6 new indices
     indexCount += 6;
     vertexCount += 4;
