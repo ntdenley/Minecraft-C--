@@ -54,20 +54,12 @@ Chunk::Chunk(glm::vec3 offset, Shader *shaderProg) : offset(offset), shader(shad
     for(float y = 0; y < CHUNK_SIZE; y++)
     for(float z = 0; z < CHUNK_SIZE; z++){
         float y_noise = noise.GetNoise(x + worldPos.x, z + worldPos.z) * 10.0f;
-        y_noise += pow(2, noise.GetNoise(x + worldPos.x, z + worldPos.z) * 5.0f);
+        y_noise += pow(2, noise.GetNoise(x + worldPos.x, z + worldPos.z) * 4.0f);
         if(y+worldPos.y < y_noise)
             blockData[pos_to_index(x, y, z)] = BlockType::DIRT;
         else
             blockData[pos_to_index(x, y, z)] = BlockType::AIR;
     }
-
-    // Generate the VAO, VBO, and EBO
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-
-    // Bind the VAO to the GL State Machine
-    glBindVertexArray(VAO);
 }
 
 Chunk::~Chunk() {
@@ -110,32 +102,49 @@ void Chunk::Generate() {
         }
     }}}
 
-    // Bind the vertex array object
-    glBindVertexArray(VAO);
-
-    // Bind the vertex buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-    // Bind the element buffer object
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-    // Tell OpenGL how to interpret the vertex data
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // Texture Coord attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // Pseudo-lighting attribute
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
-    glEnableVertexAttribArray(2);
+    generated = true;
 }
 
 void Chunk::Render() {
+    if(!generated)
+        return;
+
+    if(!ready){
+        // Generate the VAO, VBO, and EBO
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+
+        // Bind the VAO to the GL State Machine
+        glBindVertexArray(VAO);
+
+        // Bind the vertex array object
+        glBindVertexArray(VAO);
+
+        // Bind the vertex buffer object
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+        // Bind the element buffer object
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+        // Tell OpenGL how to interpret the vertex data
+        // Position attribute
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        // Texture Coord attribute
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+
+        // Pseudo-lighting attribute
+        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+
+        ready = true;
+    }
+
     // Bind the vertex array object
     glBindVertexArray(VAO);
 

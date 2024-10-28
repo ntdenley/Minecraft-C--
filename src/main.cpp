@@ -139,12 +139,12 @@ int main() {
         totalTime += deltaTime;
 
         // If one second has passed, print the FPS and reset the frame count and total time
-        if (totalTime >= 1.0)
-        {
-            std::cout << "FPS: " << frameCount << std::endl;
-            frameCount = 0;
-            totalTime -= 1.0;
-        }
+        // if (totalTime >= 1.0)
+        // {
+        //     std::cout << "FPS: " << frameCount << std::endl;
+        //     frameCount = 0;
+        //     totalTime -= 1.0;
+        // }
 
         // Process input
         processInput(window);
@@ -237,7 +237,7 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
         camera.ProcessKeyboard(DOWN, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-        camera.MovementSpeed = camera.DefaultSpeed * 10.0f;
+        camera.MovementSpeed = camera.DefaultSpeed * 50.0f;
     else
         camera.MovementSpeed = camera.DefaultSpeed;
 }

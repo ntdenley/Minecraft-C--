@@ -39,6 +39,8 @@ class Chunk {
 
         glm::vec3 offset;
         int vertexCount = 0, indexCount = 0;
+        bool generated = false;
+        bool ready = false;
 
 
     private:
