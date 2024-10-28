@@ -61,40 +61,40 @@ void World::Update(glm::vec3 player_pos) {
     for (int x = -render_distance; x <= render_distance; x++)
     for (int y = -render_height; y <= render_height; y++)
     for (int z = -render_distance; z <= render_distance; z++) {
+        // Get the chunk position
         int new_chunk_x = chunk_x + x;
         int new_chunk_y = chunk_y + y;
         int new_chunk_z = chunk_z + z;
 
-        auto chunk_tup = make_tuple(new_chunk_x, new_chunk_y, new_chunk_z);
+        // Create the key
+        tuple<int, int, int> chunk_tup = make_tuple(new_chunk_x, new_chunk_y, new_chunk_z);
+        
         // Check if the chunk is already loaded
-        if (chunks.find(chunk_tup) == chunks.end() && chunks_to_render.find(chunk_tup) == chunks_to_render.end()) {
-            lock_guard<mutex> lock(chunk_mutex);
-            // Add the chunk to the queue
-            chunk_queue.push(glm::ivec3(new_chunk_x, new_chunk_y, new_chunk_z));
-            chunks_to_render.insert(chunk_tup);
-            chunks_loading++;
-        }
-    }
-
-    // Render the chunks
-    for (int x = -render_distance; x <= render_distance; x++)
-    for (int y = -render_height; y <= render_height; y++)
-    for (int z = -render_distance; z <= render_distance; z++) {
-        int target_chunk_x = chunk_x + x;
-        int target_chunk_y = chunk_y + y;
-        int target_chunk_z = chunk_z + z;
-
-        auto target_chunk = std::make_tuple(target_chunk_x, target_chunk_y, target_chunk_z);
-        Chunk* chunk = nullptr;
+        bool chunk_loaded = false;
         {   
             lock_guard<mutex> lock(chunk_mutex);
-            // Render the chunk if it is loaded
-            if (chunks.find(target_chunk) != chunks.end()) {
-                chunk = chunks[target_chunk];
+            // Chunk is loaded, set flag
+            if(chunks.find(chunk_tup) != chunks.end())
+                chunk_loaded = true;
+
+            // Chunk is not loaded, add it to the queue
+            else if (chunks_to_render.find(chunk_tup) == chunks_to_render.end()){
+                chunk_queue.push(glm::ivec3(new_chunk_x, new_chunk_y, new_chunk_z));
+                chunks_to_render.insert(chunk_tup);
+                chunks_loading++;
             }
         }
-        if (chunk){
-            chunk->Render();
+
+        // Render the chunk
+        if(chunk_loaded){
+            Chunk* chunk = nullptr;
+            {
+                lock_guard<mutex> lock(chunk_mutex);
+                chunk = chunks[chunk_tup];
+            }
+            if (chunk) {
+                chunk->Render();
+            }
         }
     }
 }

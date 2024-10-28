@@ -131,16 +131,20 @@ void Chunk::Render() {
 
         // Tell OpenGL how to interpret the vertex data
         // Position attribute
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 
         // Texture Coord attribute
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3 * sizeof(float)));
         glEnableVertexAttribArray(1);
 
         // Pseudo-lighting attribute
-        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
+        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(5 * sizeof(float)));
         glEnableVertexAttribArray(2);
+
+        // Texture layer attribute
+        glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(3);
 
         ready = true;
     }
@@ -191,6 +195,7 @@ void Chunk::AddFace(glm::ivec3 pos, Direction direction) {
         vertices.push_back(*ptr++);
         vertices.push_back(*ptr);
         vertices.push_back(color);
+        vertices.push_back(0);
     }
 
     // Indices

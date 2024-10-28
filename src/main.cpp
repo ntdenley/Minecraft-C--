@@ -1,5 +1,6 @@
 #include <iostream>
 #include <thread>
+#include <filesystem>
 
 #include <glad/glad.h> // OpenGL functions
 #include <GLFW/glfw3.h>// Window functions
@@ -14,7 +15,7 @@
 #include <world/world.h>
 #include <util/camera.h>
 #include <vfx/shader.h>
-#include <vfx/stb_image.h>
+#include <vfx/textures.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -41,8 +42,8 @@ int main() {
 
     // Initialize the GLFW window
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // Using OpenGL Major Version 3..
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); // .. + Minor Version 3 = 3.3
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); // Using OpenGL Major Version 3..
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6); // .. + Minor Version 3 = 3.3
 
     // Use the core profile
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -88,36 +89,10 @@ int main() {
     // create the shader program
     Shader shaderProgram("vfx/shaders/3.3.vertex.glsl", "vfx/shaders/3.3.fragment.glsl");
 
-    // // Textures
-    //===================================================================================
-    // texture 1
-    unsigned int texture1;
-    glGenTextures(1, &texture1);
-    glBindTexture(GL_TEXTURE_2D, texture1);
-
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    // load and generate the texture
-    int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(true);
-    unsigned char *data = stbi_load("assets/dirt.png", &width, &height, &nrChannels, 0);
-
-    // Check that the image was loaded
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    std::cout << "Failed to load texture" << std::endl;
-    stbi_image_free(data);
-
     shaderProgram.use();
+
+    // Load the textures
+    loadTextures();
 
     // Variables to keep track of the number of frames rendered and the total time elapsed
     int frameCount = 0;
@@ -139,21 +114,18 @@ int main() {
         totalTime += deltaTime;
 
         // If one second has passed, print the FPS and reset the frame count and total time
-        // if (totalTime >= 1.0)
-        // {
-        //     std::cout << "FPS: " << frameCount << std::endl;
-        //     frameCount = 0;
-        //     totalTime -= 1.0;
-        // }
+        if (totalTime >= 1.0)
+        {
+            std::cout << "FPS: " << frameCount << std::endl;
+            frameCount = 0;
+            totalTime -= 1.0;
+        }
 
         // Process input
         processInput(window);
 
         // Render commands will go here
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Bind the texture
-        glBindTexture(GL_TEXTURE_2D, texture1);
 
         // Use the shader program
         shaderProgram.use();
